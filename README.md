@@ -103,7 +103,7 @@ Executes Linear Issues tagged with `prompt-done`.
 
 **Core Rule**: No test pass = No evidence submission
 
-**Label Flow**: `prompt-done → Execution complete → 待验证 → 已完成`
+**Label Flow**: `prompt-done → Execution complete → pending-review → completed`
 
 ---
 
