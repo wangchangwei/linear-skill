@@ -47,8 +47,8 @@ claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 | 标签名称 | 用途 | 颜色建议 |
 |---------|------|---------|
 | `prompt-done` | AI Prompt 已生成，待执行 | 蓝色 |
-| `待验证` | 执行完成，待人工验证 | 黄色 |
-| `已完成` | 验证通过，任务结束 | 绿色 |
+| `pending-review` | 执行完成，待人工验证 | 黄色 |
+| `completed` | 验证通过，任务结束 | 绿色 |
 
 **创建方式**：
 1. 登录 Linear Web
@@ -99,11 +99,11 @@ export LINEAR_API_KEY="lin_api_xxxxxx"
 3. 创建开发分支 `{type}/{date}-{short-title}`
 4. TDD 循环执行（RED → GREEN → REFACTOR）
 5. **E2E 测试 100% 通过后**提交验证证据到 Linear
-6. 将标签从 `prompt-done` 改为 `待验证`
+6. 将标签从 `prompt-done` 改为 `pending-review`
 
 **核心规则**：测试未通过 = 不能提交证据
 
-**标签流转**：`prompt-done → 执行中 → 待验证 → 已完成`
+**标签流转**：`prompt-done → Execution complete → pending-review → completed`
 
 ---
 

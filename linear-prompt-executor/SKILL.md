@@ -7,7 +7,7 @@ description: Use when there are Linear issues with prompt-done tag that need to 
 
 ## Overview
 
-执行带有 `prompt-done` 标签的 Linear Issue：从评论中读取 AI Prompt，通过 TDD 方式执行开发/修复，**必须 E2E 测试通过才能提交证据**，提交验证证据到 Linear，并更新标签为待验证。
+执行带有 `prompt-done` 标签的 Linear Issue：从评论中读取 AI Prompt，通过 TDD 方式执行开发/修复，**必须 E2E 测试通过才能提交证据**，提交验证证据到 Linear，并更新标签为pending-review。
 
 ## When to Use
 
@@ -103,11 +103,11 @@ REFACTOR: 优化代码
 
 ### Step 6: 更新标签
 
-使用 `mcp__linear-server__save_issue` 将标签从 `prompt-done` 改为 `待验证`：
+使用 `mcp__linear-server__save_issue` 将标签从 `prompt-done` 改为 `pending-review`：
 
 ```json
 {
-  "labels": ["待验证"]
+  "labels": ["pending-review"]
 }
 ```
 
@@ -124,7 +124,7 @@ REFACTOR: 优化代码
 ## 标签状态流转
 
 ```
-prompt-done → 执行中 → 待验证 → 已完成
+prompt-done → Execution complete → pending-review → 已完成
 ```
 
 ## Red Flags - STOP

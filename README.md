@@ -47,8 +47,8 @@ Example configuration (`~/.claude/settings.json`):
 | Label | Purpose | Recommended Color |
 |-------|---------|------------------|
 | `prompt-done` | AI Prompt generated, awaiting execution | Blue |
-| `待验证` | Execution complete, pending verification | Yellow |
-| `已完成` | Verified, task complete | Green |
+| `pending-review` | Execution complete, pending verification | Yellow |
+| `completed` | Verified, task complete | Green |
 
 **How to create:**
 1. Log in to Linear Web
@@ -99,11 +99,11 @@ Executes Linear Issues tagged with `prompt-done`.
 3. Create dev branch `{type}/{date}-{short-title}`
 4. TDD loop (RED → GREEN → REFACTOR)
 5. **Submit verification evidence to Linear** only after E2E tests pass 100%
-6. Change label from `prompt-done` to `待验证`
+6. Change label from `prompt-done` to `pending-review`
 
 **Core Rule**: No test pass = No evidence submission
 
-**Label Flow**: `prompt-done → 执行中 → 待验证 → 已完成`
+**Label Flow**: `prompt-done → Execution complete → 待验证 → 已完成`
 
 ---
 
