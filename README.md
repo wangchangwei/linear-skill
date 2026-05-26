@@ -1,9 +1,9 @@
-# Linear Skills
+# GitLab Skills
 
 [![English](https://img.shields.io/badge/-English-blue.svg)](README.md)
 [![中文](https://img.shields.io/badge/-中文-red.svg)](README_zh.md)
 
-Claude Code local Skills for managing Linear Issue and AI Prompt workflows.
+Claude Code local Skills for managing GitLab Issue and AI Prompt workflows.
 
 ## Prerequisites
 
@@ -19,19 +19,19 @@ Install superpowers plugin:
 claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 ```
 
-### Linear MCP Server
+### GitLab MCP Server
 
-Requires `mcp__linear-server__*` tools. See [linear-server-mcp](https://github.com/your-org/linear-server-mcp).
+Requires GitLab MCP tools. See [@zereight/gitlab-mcp](https://github.com/zereight/gitlab-mcp).
 
 Example configuration (`~/.claude/settings.json`):
 ```json
 {
   "mcpServers": {
-    "linear-server": {
+    "gitlab": {
       "command": "npx",
-      "args": ["-y", "linear-server-mcp"],
+      "args": ["-y", "@zereight/gitlab-mcp"],
       "env": {
-        "LINEAR_API_KEY": "your Linear API key"
+        "GITLAB_TOKEN": "your GitLab token"
       }
     }
   }
@@ -40,9 +40,9 @@ Example configuration (`~/.claude/settings.json`):
 
 ## Setup
 
-### 1. Linear Labels
+### 1. GitLab Labels
 
-**You must manually create these labels in Linear** for the Skills to work:
+**You must manually create these labels in GitLab** for the Skills to work:
 
 | Label | Purpose | Recommended Color |
 |-------|---------|------------------|
@@ -51,54 +51,52 @@ Example configuration (`~/.claude/settings.json`):
 | `completed` | Verified, task complete | Green |
 
 **How to create:**
-1. Log in to Linear Web
-2. Go to **Settings** → **Labels**
-3. Click **Create Label**
+1. Log in to GitLab
+2. Go to **Project** → **Settings** → **Labels**
+3. Click **New label**
 4. Enter the exact label name (must match exactly)
 
-### 2. Linear API Key
+### 2. GitLab Token
 
-#### Get Linear API Key
+#### Get GitLab Token
 
-1. Log in to [Linear](https://linear.app)
-2. Go to **Settings** → **API**
-3. Click **Create API Key**
-4. Copy the generated key
+1. Log in to [GitLab](https://gitlab.com)
+2. Go to **User Settings** → **Access Tokens**
+3. Click **Add new token**
+4. Select scopes: `api`, `read_repository`, `write_repository`
+5. Copy the generated token
 
 #### Configuration Methods
 
 **Option 1: Environment Variable**
 ```bash
-export LINEAR_API_KEY="lin_api_xxxxxx"
+export GITLAB_TOKEN="glpat-xxxxxx"
 ```
 
 **Option 2: MCP Server Config**
-Pass via `env.LINEAR_API_KEY` when starting MCP Server.
+Pass via `env.GITLAB_TOKEN` when starting MCP Server.
 
 **Option 3: Claude Code Settings**
-Configure in `~/.claude/settings.json` under `mcpServers.linear-server.env`.
+Configure in `~/.claude/settings.json` under `mcpServers.gitlab.env`.
 
 ## Skills
 
-### linear-prompt-executor
+### gitlab-prompt-executor
 
-Executes Linear Issues tagged with `prompt-done`.
+Executes GitLab Issues tagged with `prompt-done`.
 
 **Trigger**: Issue has `prompt-done` label, requires executing AI Prompt from comments.
 
 **Dependencies**:
 - `superpowers:test-driven-development`
-- `mcp__linear-server__list_issues`
-- `mcp__linear-server__list_comments`
-- `mcp__linear-server__save_comment`
-- `mcp__linear-server__save_issue`
+- GitLab MCP tools (gitlab_get_issue, gitlab_list_issues, etc.)
 
 **Workflow**:
 1. Fetch Issues with `prompt-done` label
 2. Read AI Task Prompt from comments
 3. Create dev branch `{type}/{date}-{short-title}`
 4. TDD loop (RED → GREEN → REFACTOR)
-5. **Submit verification evidence to Linear** only after E2E tests pass 100%
+5. **Submit verification evidence to GitLab** only after E2E tests pass 100%
 6. Change label from `prompt-done` to `pending-review`
 
 **Core Rule**: No test pass = No evidence submission
@@ -107,23 +105,20 @@ Executes Linear Issues tagged with `prompt-done`.
 
 ---
 
-### linear-to-task-prompt
+### gitlab-to-task-prompt
 
-Converts Linear Issue links to AI-executable task prompts.
+Converts GitLab Issue links to AI-executable task prompts.
 
-**Trigger**: User provides a Linear Issue link
+**Trigger**: User provides a GitLab Issue link
 
 **Dependencies**:
-- `mcp__linear-server__get_issue`
-- `mcp__linear-server__list_comments`
-- `mcp__linear-server__save_comment`
-- `mcp__linear-server__save_issue`
+- GitLab MCP tools (gitlab_get_issue, gitlab_list_issue_notes, etc.)
 
 **Workflow**:
 1. Fetch complete Issue info
 2. Dialog to clarify Issue context, goals, and constraints
 3. Generate AI task prompt
-4. Add comment to Linear (optional)
+4. Add comment to GitLab (optional)
 5. Add `prompt-done` label (optional)
 
 ---
@@ -133,37 +128,37 @@ Converts Linear Issue links to AI-executable task prompts.
 Copy Skills to local Claude Skills directory:
 
 ```bash
-cp -r linear-prompt-executor ~/.claude/skills/
-cp -r linear-to-task-prompt ~/.claude/skills/
+cp -r gitlab-prompt-executor ~/.claude/skills/
+cp -r gitlab-to-task-prompt ~/.claude/skills/
 ```
 
 Or use symlinks:
 
 ```bash
-ln -s /path/to/linear-skill/linear-prompt-executor ~/.claude/skills/linear-prompt-executor
-ln -s /path/to/linear-skill/linear-to-task-prompt ~/.claude/skills/linear-to-task-prompt
+ln -s /path/to/linear-skill/gitlab-prompt-executor ~/.claude/skills/gitlab-prompt-executor
+ln -s /path/to/linear-skill/gitlab-to-task-prompt ~/.claude/skills/gitlab-to-task-prompt
 ```
 
 ## Quick Start
 
-### 1. Configure Linear API Key
+### 1. Configure GitLab Token
 
 ```bash
-export LINEAR_API_KEY="lin_api_xxxxxx"
+export GITLAB_TOKEN="glpat-xxxxxx"
 ```
 
-### 2. Verify Linear MCP Server
+### 2. Verify GitLab MCP Server
 
 ```bash
 claude mcp list
-# Should show linear-server
+# Should show gitlab server
 ```
 
 ### 3. Use Skills
 
-**Via Linear Issue link**
+**Via GitLab Issue link**
 ```
-Give me the task description for this Linear Issue: [paste link]
+Give me the task description for this GitLab Issue: [paste link]
 ```
 
 **Execute prompt-done Issues**
@@ -174,13 +169,13 @@ Check if there are any prompt-done Issues to execute
 ## FAQ
 
 **Q: Labels not found or `prompt-done` missing**
-A: You must manually create labels in Linear Settings → Labels. Skills do not create labels automatically.
+A: You must manually create labels in GitLab Project Settings → Labels. Skills do not create labels automatically.
 
 **Q: MCP tools not available**
-A: Verify `LINEAR_API_KEY` environment variable is correct and MCP Server is running.
+A: Verify `GITLAB_TOKEN` environment variable is correct and MCP Server is running.
 
 **Q: TDD tests failing**
 A: This is expected. Fix the code until tests pass. **Skipping is not allowed.**
 
 **Q: How to add `prompt-done` label**
-A: In Linear Issue page, click Labels → add `prompt-done` (must be created in Settings first).
+A: In GitLab Issue page, click Labels → add `prompt-done` (must be created in Project Settings first).
