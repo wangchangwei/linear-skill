@@ -1,26 +1,29 @@
 # Linear Skills
 
-Claude Code 本地 Skills，用于处理 Linear Issue 和 AI Prompt 的工作流。
+[![English](https://img.shields.io/badge/-English-blue.svg)](README.md)
+[![中文](https://img.shields.io/badge/-中文-red.svg)](README_zh.md)
 
-## 依赖要求
+Claude Code local Skills for managing Linear Issue and AI Prompt workflows.
 
-### 必须安装的 Skills
+## Prerequisites
 
-| Skill | 来源 | 用途 |
-|--------|------|------|
-| `superpowers:test-driven-development` | [superpowers plugin](https://github.com/superpowerlabs/superpowers) | TDD 循环执行 |
-| `superpowers:verification-before-completion` | [superpowers plugin](https://github.com/superpowerlabs/superpowers) | 完成后验证 |
+### Required Skills
 
-安装 superpowers plugin：
+| Skill | Source | Purpose |
+|-------|--------|---------|
+| `superpowers:test-driven-development` | [superpowers plugin](https://github.com/superpowerlabs/superpowers) | TDD execution loop |
+| `superpowers:verification-before-completion` | [superpowers plugin](https://github.com/superpowerlabs/superpowers) | Post-completion verification |
+
+Install superpowers plugin:
 ```bash
 claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 ```
 
 ### Linear MCP Server
 
-需要配置 `mcp__linear-server__*` 工具，参考 [linear-server-mcp](https://github.com/your-org/linear-server-mcp)。
+Requires `mcp__linear-server__*` tools. See [linear-server-mcp](https://github.com/your-org/linear-server-mcp).
 
-配置示例（`~/.claude/settings.json`）：
+Example configuration (`~/.claude/settings.json`):
 ```json
 {
   "mcpServers": {
@@ -35,153 +38,149 @@ claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 }
 ```
 
-## 前置配置
+## Setup
 
-### 1. Linear 标签配置
+### 1. Linear Labels
 
-**必须手动在 Linear 中创建以下标签**，Skills 依赖这些标签进行状态流转：
+**You must manually create these labels in Linear** for the Skills to work:
 
-| 标签名称 | 用途 | 颜色建议 |
-|---------|------|---------|
-| `prompt-done` | AI Prompt 已生成，待执行 | 蓝色 |
-| `待验证` | 执行完成，待人工验证 | 黄色 |
-| `已完成` | 验证通过，任务结束 | 绿色 |
+| Label | Purpose | Recommended Color |
+|-------|---------|------------------|
+| `prompt-done` | AI Prompt generated, awaiting execution | Blue |
+| `待验证` | Execution complete, pending verification | Yellow |
+| `已完成` | Verified, task complete | Green |
 
-**创建方式**：
-1. 登录 Linear Web
-2. 进入 **Settings** → **Labels**
-3. 点击 **Create Label**
-4. 输入标签名称（必须精确匹配上述名称）
+**How to create:**
+1. Log in to Linear Web
+2. Go to **Settings** → **Labels**
+3. Click **Create Label**
+4. Enter the exact label name (must match exactly)
 
-### 2. Linear API Key 配置
+### 2. Linear API Key
 
-### 获取 Linear API Key
+#### Get Linear API Key
 
-1. 登录 Linear Web（[linear.app](https://linear.app)）
-2. 进入 **Settings** → **API**
-3. 点击 **Create API Key**
-4. 复制生成的 Key
+1. Log in to [Linear](https://linear.app)
+2. Go to **Settings** → **API**
+3. Click **Create API Key**
+4. Copy the generated key
 
-### 配置方式
+#### Configuration Methods
 
-**方式一：环境变量**
+**Option 1: Environment Variable**
 ```bash
 export LINEAR_API_KEY="lin_api_xxxxxx"
 ```
 
-**方式二：MCP Server 配置**
-在启动 MCP Server 时通过 `env.LINEAR_API_KEY` 传入。
+**Option 2: MCP Server Config**
+Pass via `env.LINEAR_API_KEY` when starting MCP Server.
 
-**方式三：Claude Code Settings**
-在 `~/.claude/settings.json` 的 `mcpServers.linear-server.env` 中配置。
+**Option 3: Claude Code Settings**
+Configure in `~/.claude/settings.json` under `mcpServers.linear-server.env`.
 
 ## Skills
 
 ### linear-prompt-executor
 
-执行带有 `prompt-done` 标签的 Linear Issue。
+Executes Linear Issues tagged with `prompt-done`.
 
-**触发条件**：Linear Issue 有 `prompt-done` 标签，需要根据评论中的 AI Prompt 执行任务。
+**Trigger**: Issue has `prompt-done` label, requires executing AI Prompt from comments.
 
-**依赖**：
+**Dependencies**:
 - `superpowers:test-driven-development`
 - `mcp__linear-server__list_issues`
 - `mcp__linear-server__list_comments`
 - `mcp__linear-server__save_comment`
 - `mcp__linear-server__save_issue`
 
-**工作流程**：
-1. 获取带 `prompt-done` 标签的 Issue
-2. 从评论中读取 AI Task Prompt
-3. 创建开发分支 `{type}/{date}-{short-title}`
-4. TDD 循环执行（RED → GREEN → REFACTOR）
-5. **E2E 测试 100% 通过后**提交验证证据到 Linear
-6. 将标签从 `prompt-done` 改为 `待验证`
+**Workflow**:
+1. Fetch Issues with `prompt-done` label
+2. Read AI Task Prompt from comments
+3. Create dev branch `{type}/{date}-{short-title}`
+4. TDD loop (RED → GREEN → REFACTOR)
+5. **Submit verification evidence to Linear** only after E2E tests pass 100%
+6. Change label from `prompt-done` to `待验证`
 
-**核心规则**：测试未通过 = 不能提交证据
+**Core Rule**: No test pass = No evidence submission
 
-**标签流转**：`prompt-done → 执行中 → 待验证 → 已完成`
+**Label Flow**: `prompt-done → 执行中 → 待验证 → 已完成`
 
 ---
 
 ### linear-to-task-prompt
 
-将 Linear Issue 链接转换为 AI 可执行的任务提示词。
+Converts Linear Issue links to AI-executable task prompts.
 
-**触发条件**：用户提供 Linear Issue 链接
+**Trigger**: User provides a Linear Issue link
 
-**依赖**：
+**Dependencies**:
 - `mcp__linear-server__get_issue`
 - `mcp__linear-server__list_comments`
 - `mcp__linear-server__save_comment`
 - `mcp__linear-server__save_issue`
 
-**工作流程**：
-1. 获取 Issue 完整信息
-2. 通过对话补全 Issue 的背景、目标、约束
-3. 生成 AI 任务提示词
-4. 追加评论到 Linear（可选）
-5. 添加 `prompt-done` 标签（可选）
+**Workflow**:
+1. Fetch complete Issue info
+2. Dialog to clarify Issue context, goals, and constraints
+3. Generate AI task prompt
+4. Add comment to Linear (optional)
+5. Add `prompt-done` label (optional)
 
 ---
 
-## 安装方式
+## Installation
 
-将 Skills 复制到本地 Claude Skills 目录：
+Copy Skills to local Claude Skills directory:
 
 ```bash
-# linear-prompt-executor
 cp -r linear-prompt-executor ~/.claude/skills/
-
-# linear-to-task-prompt
 cp -r linear-to-task-prompt ~/.claude/skills/
 ```
 
-或者使用符号链接：
+Or use symlinks:
 
 ```bash
 ln -s /path/to/linear-skill/linear-prompt-executor ~/.claude/skills/linear-prompt-executor
 ln -s /path/to/linear-skill/linear-to-task-prompt ~/.claude/skills/linear-to-task-prompt
 ```
 
-## 快速开始
+## Quick Start
 
-### 1. 配置 Linear API Key
+### 1. Configure Linear API Key
 
 ```bash
 export LINEAR_API_KEY="lin_api_xxxxxx"
 ```
 
-### 2. 配置 Linear MCP Server
+### 2. Verify Linear MCP Server
 
-确保 MCP Server 可用：
 ```bash
 claude mcp list
-# 应看到 linear-server
+# Should show linear-server
 ```
 
-### 3. 使用 Skills
+### 3. Use Skills
 
-**方式一：通过 Linear Issue 链接**
+**Via Linear Issue link**
 ```
-给我这个 Linear Issue 的任务描述：[粘贴链接]
-```
-
-**方式二：执行 prompt-done Issue**
-```
-检查一下有没有 prompt-done 的 Issue 需要执行
+Give me the task description for this Linear Issue: [paste link]
 ```
 
-## 常见问题
+**Execute prompt-done Issues**
+```
+Check if there are any prompt-done Issues to execute
+```
 
-**Q: Labels 为空或找不到 `prompt-done`**
-A: 必须在 Linear Settings → Labels 中手动创建。Skills 不会自动创建标签。
+## FAQ
 
-**Q: MCP 工具不可用**
-A: 检查 `LINEAR_API_KEY` 环境变量是否正确配置，确认 MCP Server 已启动。
+**Q: Labels not found or `prompt-done` missing**
+A: You must manually create labels in Linear Settings → Labels. Skills do not create labels automatically.
 
-**Q: TDD 测试失败**
-A: 这是预期行为。测试失败时需修复代码直到测试通过，**不允许跳过**。
+**Q: MCP tools not available**
+A: Verify `LINEAR_API_KEY` environment variable is correct and MCP Server is running.
 
-**Q: 如何添加 prompt-done 标签**
-A: 在 Linear Issue 页面右侧 Labels → 添加 `prompt-done` 标签（需先在 Settings 中创建）。
+**Q: TDD tests failing**
+A: This is expected. Fix the code until tests pass. **Skipping is not allowed.**
+
+**Q: How to add `prompt-done` label**
+A: In Linear Issue page, click Labels → add `prompt-done` (must be created in Settings first).
