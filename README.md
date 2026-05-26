@@ -21,7 +21,7 @@ claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 
 ### GitLab MCP Server
 
-Requires GitLab MCP tools. See [@zereight/gitlab-mcp](https://github.com/zereight/gitlab-mcp).
+Requires GitLab MCP tools. See [@zereight/mcp-gitlab](https://github.com/zereight/gitlab-mcp).
 
 Example configuration (`~/.claude/settings.json`):
 ```json
@@ -29,9 +29,9 @@ Example configuration (`~/.claude/settings.json`):
   "mcpServers": {
     "gitlab": {
       "command": "npx",
-      "args": ["-y", "@zereight/gitlab-mcp"],
+      "args": ["-y", "@zereight/mcp-gitlab"],
       "env": {
-        "GITLAB_TOKEN": "your GitLab token"
+        "GITLAB_PERSONAL_ACCESS_TOKEN": "your GitLab token"
       }
     }
   }

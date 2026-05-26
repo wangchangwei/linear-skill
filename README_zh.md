@@ -21,7 +21,7 @@ claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 
 ### GitLab MCP Server
 
-需要配置 GitLab MCP 工具，参考 [@zereight/gitlab-mcp](https://github.com/zereight/gitlab-mcp)。
+需要配置 GitLab MCP 工具，参考 [@zereight/mcp-gitlab](https://github.com/zereight/gitlab-mcp)。
 
 配置示例（`~/.claude/settings.json`）：
 ```json
@@ -29,9 +29,9 @@ claude mcp add superpower -- npx -y @superpowerlabs/superpowers
   "mcpServers": {
     "gitlab": {
       "command": "npx",
-      "args": ["-y", "@zereight/gitlab-mcp"],
+      "args": ["-y", "@zereight/mcp-gitlab"],
       "env": {
-        "GITLAB_TOKEN": "your GitLab token"
+        "GITLAB_PERSONAL_ACCESS_TOKEN": "your GitLab token"
       }
     }
   }
