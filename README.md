@@ -35,7 +35,25 @@ claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 }
 ```
 
-## Linear API Key 配置
+## 前置配置
+
+### 1. Linear 标签配置
+
+**必须手动在 Linear 中创建以下标签**，Skills 依赖这些标签进行状态流转：
+
+| 标签名称 | 用途 | 颜色建议 |
+|---------|------|---------|
+| `prompt-done` | AI Prompt 已生成，待执行 | 蓝色 |
+| `待验证` | 执行完成，待人工验证 | 黄色 |
+| `已完成` | 验证通过，任务结束 | 绿色 |
+
+**创建方式**：
+1. 登录 Linear Web
+2. 进入 **Settings** → **Labels**
+3. 点击 **Create Label**
+4. 输入标签名称（必须精确匹配上述名称）
+
+### 2. Linear API Key 配置
 
 ### 获取 Linear API Key
 
@@ -156,6 +174,9 @@ claude mcp list
 
 ## 常见问题
 
+**Q: Labels 为空或找不到 `prompt-done`**
+A: 必须在 Linear Settings → Labels 中手动创建。Skills 不会自动创建标签。
+
 **Q: MCP 工具不可用**
 A: 检查 `LINEAR_API_KEY` 环境变量是否正确配置，确认 MCP Server 已启动。
 
@@ -163,4 +184,4 @@ A: 检查 `LINEAR_API_KEY` 环境变量是否正确配置，确认 MCP Server �
 A: 这是预期行为。测试失败时需修复代码直到测试通过，**不允许跳过**。
 
 **Q: 如何添加 prompt-done 标签**
-A: 在 Linear Issue 页面右侧 Labels → 添加 `prompt-done` 标签。
+A: 在 Linear Issue 页面右侧 Labels → 添加 `prompt-done` 标签（需先在 Settings 中创建）。
