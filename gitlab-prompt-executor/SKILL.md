@@ -15,6 +15,17 @@ description: Use when there are GitLab issues with prompt-done label that need t
 - 需要根据评论中的 AI Prompt 执行任务
 - 任务需要通过 E2E 测试验证
 
+## GitLab API 配置
+
+使用前需配置环境变量：
+
+```bash
+export GITLAB_TOKEN="YOUR_GITLAB_TOKEN"
+export GITLAB_API_URL="https://gitlab.com/api/v4"
+# 或使用私有 GitLab 实例：
+# export GITLAB_API_URL="http://10.10.10.217/api/v4"
+```
+
 ## Critical Rule
 
 **E2E 测试必须 100% 通过才能提交证据。未通过测试绝不能提交证据。**
@@ -30,13 +41,24 @@ description: Use when there are GitLab issues with prompt-done label that need t
 
 ### Step 1: 获取 prompt-done Issues
 
-使用 GitLab MCP 工具筛选带 `prompt-done` 标签的 Issue。
+使用 GitLab API 筛选带 `prompt-done` 标签的 Issue：
 
-GitLab labels 使用 `labels` 参数筛选。
+```bash
+curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  "$GITLAB_API_URL/issues?labels=prompt-done&state=opened"
+```
 
 ### Step 2: 获取最新评论中的 AI Prompt
 
-使用 GitLab MCP 工具获取 Issue 的评论，找到 AI Task Prompt 内容。
+使用 GitLab API 获取 Issue 的评论，找到 AI Task Prompt 内容：
+
+```bash
+# 获取 Issue 所有评论
+curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}/notes"
+
+# 评论按创建时间排序，最新评论在最后
+```
 
 ### Step 3: 创建开发分支
 
@@ -77,52 +99,52 @@ REFACTOR: 优化代码
 
 **前提条件**：E2E 测试必须 100% 通过。
 
-使用 GitLab MCP 的 `create_issue_note` 或 `create_note` 提交验证证据到 Issue。
+使用 GitLab API 提交验证证据到 Issue：
 
-评论内容格式：
-```markdown
-## 验证证据
-
-### 测试结果
-- [ ] E2E 测试通过
-- [ ] HTTP 200 响应正常
-
-### 证据类型（任选）
-**网页截图**: {描述截图内容}
-**日志输出**: {关键日志}
-**API 响应**: {响应摘要}
-
-### 执行信息
-- 执行时间: {timestamp}
-- 分支: {gitBranchName}
-- Commit: {commitHash}
+```bash
+curl --request POST \
+  --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "body": "## 验证证据\n\n### 测试结果\n- [x] E2E 测试通过\n- [x] HTTP 200 响应正常\n\n### 证据类型\n**执行时间**: {timestamp}\n**分支**: {gitBranchName}\n**Commit**: {commitHash}"
+  }' \
+  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}/notes"
 ```
 
 ### Step 6: 更新标签
 
-使用 GitLab MCP 工具将标签从 `prompt-done` 改为 `pending-review`。
+使用 GitLab API 将标签从 `prompt-done` 改为 `pending-review`：
 
-GitLab API 使用 `labels` 参数更新。
+```bash
+curl --request PUT \
+  --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "remove_labels": ["prompt-done"],
+    "add_labels": ["pending-review"]
+  }' \
+  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}"
+```
 
 ## Quick Reference
 
-| 操作 | 工具 |
-|------|------|
-| 筛选 prompt-done | GitLab list_issues (labels filter) |
-| 获取评论 | GitLab list_issue_notes / get_issue |
-| 提交证据 | create_issue_note |
-| 更新标签 | update_issue (labels) |
+| 操作 | API |
+|------|-----|
+| 筛选 prompt-done | `GET /issues?labels=prompt-done` |
+| 获取评论 | `GET /projects/{id}/issues/{issue_iid}/notes` |
+| 提交证据 | `POST /projects/{id}/issues/{issue_iid}/notes` |
+| 更新标签 | `PUT /projects/{id}/issues/{issue_iid}` |
 | TDD 执行 | superpowers:test-driven-development |
 
-## GitLab MCP 工具映射
+## GitLab API 工具映射
 
-| Linear 工具 | GitLab 工具 |
-|-------------|-------------|
-| mcp__linear-server__list_issues | gitlab_list_issues (by label) |
-| mcp__linear-server__get_issue | gitlab_get_issue |
-| mcp__linear-server__list_comments | gitlab_list_issue_notes |
-| mcp__linear-server__save_comment | gitlab_create_issue_note |
-| mcp__linear-server__save_issue | gitlab_update_issue |
+| Linear 工具 | GitLab API |
+|-------------|------------|
+| mcp__linear-server__list_issues | `GET /issues?labels=prompt-done` |
+| mcp__linear-server__get_issue | `GET /projects/{id}/issues/{issue_iid}` |
+| mcp__linear-server__list_comments | `GET /projects/{id}/issues/{issue_iid}/notes` |
+| mcp__linear-server__save_comment | `POST /projects/{id}/issues/{issue_iid}/notes` |
+| mcp__linear-server__save_issue | `PUT /projects/{id}/issues/{issue_iid}` |
 
 ## 标签状态流转
 

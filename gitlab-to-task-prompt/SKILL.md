@@ -15,11 +15,28 @@ description: Use when user provides a GitLab issue link and wants to dialog for 
 - 需要通过对话补全 Issue 的背景、目标、约束等信息
 - 最终生成一个 AI 可以直接执行的任务提示词
 
+## GitLab API 配置
+
+使用前需配置环境变量：
+
+```bash
+export GITLAB_TOKEN="YOUR_GITLAB_TOKEN"
+export GITLAB_API_URL="https://gitlab.com/api/v4"
+# 或使用私有 GitLab 实例：
+# export GITLAB_API_URL="http://10.10.10.217/api/v4"
+```
+
 ## Workflow
 
 ### Step 1: 提取 Issue 信息
 
-使用 GitLab MCP 工具获取 Issue 完整信息。
+使用 GitLab API 获取 Issue 完整信息：
+
+```bash
+# 获取 Issue 详情
+curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}"
+```
 
 ### Step 2: 澄清 Issue 内容（关键步骤）
 
@@ -64,7 +81,7 @@ Issue Title: {title}
 {如何验证任务完成}
 
 ## 相关资源
-{相关代码、文档、设计稿链接}
+{相关代码、文档，设计稿链接}
 ```
 
 ## Prompt 生成模板
@@ -106,33 +123,41 @@ Issue Title: {title}
 
 当用户确认 Prompt 后，同时完成以下两个操作：
 
-1. **添加评论**：使用 GitLab MCP 工具追加评论
-2. **添加标签**：使用 GitLab MCP 工具添加标签 `prompt-done`
+1. **添加评论**：使用 GitLab API 追加评论
+2. **添加标签**：使用 GitLab API 添加标签 `prompt-done`
 
-评论内容：
-```markdown
-## AI Task Prompt
+评论 API：
+```bash
+curl --request POST \
+  --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{"body": "## AI Task Prompt\n\n{生成的完整 prompt}\n\n---\n*此 Prompt 由 AI 对话生成*"}' \
+  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}/notes"
+```
 
-{生成的完整 prompt}
-
----
-*此 Prompt 由 AI 对话生成*
+更新标签 API：
+```bash
+curl --request PUT \
+  --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{"add_labels": ["prompt-done"]}' \
+  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}"
 ```
 
 ## Quick Reference
 
-| 操作 | 工具 |
-|------|------|
-| 获取 Issue | gitlab_get_issue |
-| 获取评论 | gitlab_list_issue_notes |
-| 追加评论 | gitlab_create_issue_note |
-| 更新 Issue | gitlab_update_issue |
+| 操作 | API |
+|------|-----|
+| 获取 Issue | `GET /projects/{id}/issues/{issue_iid}` |
+| 获取评论 | `GET /projects/{id}/issues/{issue_iid}/notes` |
+| 追加评论 | `POST /projects/{id}/issues/{issue_iid}/notes` |
+| 更新 Issue | `PUT /projects/{id}/issues/{issue_iid}` |
 
-## GitLab MCP 工具映射
+## GitLab API 工具映射
 
-| Linear 工具 | GitLab 工具 |
-|-------------|-------------|
-| mcp__linear-server__get_issue | gitlab_get_issue |
-| mcp__linear-server__list_comments | gitlab_list_issue_notes |
-| mcp__linear-server__save_comment | gitlab_create_issue_note |
-| mcp__linear-server__save_issue | gitlab_update_issue |
+| Linear 工具 | GitLab API |
+|-------------|------------|
+| mcp__linear-server__get_issue | `GET /projects/{id}/issues/{issue_iid}` |
+| mcp__linear-server__list_comments | `GET /projects/{id}/issues/{issue_iid}/notes` |
+| mcp__linear-server__save_comment | `POST /projects/{id}/issues/{issue_iid}/notes` |
+| mcp__linear-server__save_issue | `PUT /projects/{id}/issues/{issue_iid}` |
