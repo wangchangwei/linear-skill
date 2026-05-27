@@ -19,25 +19,6 @@ Install superpowers plugin:
 claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 ```
 
-### GitLab MCP Server
-
-Requires GitLab MCP tools. See [@zereight/mcp-gitlab](https://github.com/zereight/gitlab-mcp).
-
-Example configuration (`~/.claude/settings.json`):
-```json
-{
-  "mcpServers": {
-    "gitlab": {
-      "command": "npx",
-      "args": ["-y", "@zereight/mcp-gitlab"],
-      "env": {
-        "GITLAB_PERSONAL_ACCESS_TOKEN": "your GitLab token"
-      }
-    }
-  }
-}
-```
-
 ## Setup
 
 ### 1. GitLab Labels
@@ -89,10 +70,10 @@ Executes GitLab Issues tagged with `prompt-done`.
 
 **Dependencies**:
 - `superpowers:test-driven-development`
-- GitLab MCP tools (gitlab_get_issue, gitlab_list_issues, etc.)
+- GitLab Personal Access Token (set `GITLAB_TOKEN` environment variable)
 
 **Workflow**:
-1. Fetch Issues with `prompt-done` label
+1. Fetch Issues with `prompt-done` label via GitLab REST API
 2. Read AI Task Prompt from comments
 3. Create dev branch `{type}/{date}-{short-title}`
 4. TDD loop (RED → GREEN → REFACTOR)
@@ -112,10 +93,10 @@ Converts GitLab Issue links to AI-executable task prompts.
 **Trigger**: User provides a GitLab Issue link
 
 **Dependencies**:
-- GitLab MCP tools (gitlab_get_issue, gitlab_list_issue_notes, etc.)
+- GitLab Personal Access Token (set `GITLAB_TOKEN` environment variable)
 
 **Workflow**:
-1. Fetch complete Issue info
+1. Fetch complete Issue info via GitLab REST API
 2. Dialog to clarify Issue context, goals, and constraints
 3. Generate AI task prompt
 4. Add comment to GitLab (optional)
@@ -147,11 +128,11 @@ ln -s /path/to/linear-skill/gitlab-to-task-prompt ~/.claude/skills/gitlab-to-tas
 export GITLAB_TOKEN="glpat-xxxxxx"
 ```
 
-### 2. Verify GitLab MCP Server
+### 2. Verify GitLab API Connection
 
 ```bash
-claude mcp list
-# Should show gitlab server
+curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  "$GITLAB_API_URL/version"
 ```
 
 ### 3. Use Skills
@@ -170,9 +151,6 @@ Check if there are any prompt-done Issues to execute
 
 **Q: Labels not found or `prompt-done` missing**
 A: You must manually create labels in GitLab Project Settings → Labels. Skills do not create labels automatically.
-
-**Q: MCP tools not available**
-A: Verify `GITLAB_TOKEN` environment variable is correct and MCP Server is running.
 
 **Q: TDD tests failing**
 A: This is expected. Fix the code until tests pass. **Skipping is not allowed.**

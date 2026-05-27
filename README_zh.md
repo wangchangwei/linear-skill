@@ -19,25 +19,6 @@ Claude Code 本地 Skills，用于处理 GitLab Issue 和 AI Prompt 的工作流
 claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 ```
 
-### GitLab MCP Server
-
-需要配置 GitLab MCP 工具，参考 [@zereight/mcp-gitlab](https://github.com/zereight/gitlab-mcp)。
-
-配置示例（`~/.claude/settings.json`）：
-```json
-{
-  "mcpServers": {
-    "gitlab": {
-      "command": "npx",
-      "args": ["-y", "@zereight/mcp-gitlab"],
-      "env": {
-        "GITLAB_PERSONAL_ACCESS_TOKEN": "your GitLab token"
-      }
-    }
-  }
-}
-```
-
 ## 前置配置
 
 ### 1. GitLab 标签配置
@@ -89,10 +70,10 @@ export GITLAB_TOKEN="glpat-xxxxxx"
 
 **依赖**：
 - `superpowers:test-driven-development`
-- GitLab MCP 工具
+- GitLab Personal Access Token（设置 `GITLAB_TOKEN` 环境变量）
 
 **工作流程**：
-1. 获取带 `prompt-done` 标签的 Issue
+1. 通过 GitLab REST API 获取带 `prompt-done` 标签的 Issue
 2. 从评论中读取 AI Task Prompt
 3. 创建开发分支 `{type}/{date}-{short-title}`
 4. TDD 循环执行（RED → GREEN → REFACTOR）
@@ -112,10 +93,10 @@ export GITLAB_TOKEN="glpat-xxxxxx"
 **触发条件**：用户提供 GitLab Issue 链接
 
 **依赖**：
-- GitLab MCP 工具
+- GitLab Personal Access Token（设置 `GITLAB_TOKEN` 环境变量）
 
 **工作流程**：
-1. 获取 Issue 完整信息
+1. 通过 GitLab REST API 获取 Issue 完整信息
 2. 通过对话补全 Issue 的背景、目标、约束
 3. 生成 AI 任务提示词
 4. 追加评论到 GitLab（可选）
@@ -147,11 +128,11 @@ ln -s /path/to/linear-skill/gitlab-to-task-prompt ~/.claude/skills/gitlab-to-tas
 export GITLAB_TOKEN="glpat-xxxxxx"
 ```
 
-### 2. 验证 GitLab MCP Server
+### 2. 验证 GitLab API 连接
 
 ```bash
-claude mcp list
-# 应看到 gitlab server
+curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  "$GITLAB_API_URL/version"
 ```
 
 ### 3. 使用 Skills
@@ -170,9 +151,6 @@ claude mcp list
 
 **Q: Labels 为空或找不到 `prompt-done`**
 A: 必须在 GitLab Project Settings → Labels 中手动创建。Skills 不会自动创建标签。
-
-**Q: MCP 工具不可用**
-A: 检查 `GITLAB_TOKEN` 环境变量是否正确配置，确认 MCP Server 已启动。
 
 **Q: TDD 测试失败**
 A: 这是预期行为。测试失败时需修复代码直到测试通过，**不允许跳过**。
