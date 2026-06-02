@@ -19,6 +19,70 @@ Claude Code 本地 Skills，用于处理 GitLab Issue 和 AI Prompt 的工作流
 claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 ```
 
+### GitLab CLI (glab)
+
+**主要工具**：本项目使用 [glab (GitLab CLI)](https://gitlab.com/gitlab-org/cli) 进行所有 GitLab 操作。
+
+#### 安装
+
+**Windows (winget)**：
+```bash
+winget install GLab.GLab
+```
+
+**macOS (Homebrew)**：
+```bash
+brew install glab
+```
+
+**Linux**：
+```bash
+# Debian/Ubuntu
+curl -sSL https://packages.gitlab.com/install/repositories/glab/glab-cli/script.deb.sh | sudo bash
+sudo apt-get install glab
+
+# 或使用包管理器
+sudo apt install glab  # Debian/Ubuntu
+sudo dnf install glab  # Fedora
+```
+
+#### 认证
+
+安装后需要认证：
+
+```bash
+glab auth login
+```
+
+或通过环境变量设置 Token：
+```bash
+export GITLAB_TOKEN="glpat-xxxxxx"
+```
+
+#### 验证安装
+
+```bash
+glab --version
+glab auth status
+```
+
+#### 常用 glab 命令
+
+| 操作 | 命令 |
+|------|------|
+| 列出 Issues | `glab issue list --label "prompt-done"` |
+| 查看 Issue | `glab issue view {issue_id}` |
+| 列出评论 | `glab issue note list {issue_id}` |
+| 添加评论 | `glab issue note create {issue_id} --message "内容"` |
+| 更新标签 | `glab issue update {issue_id} --add-label "pending-review" --remove-label "prompt-done"` |
+
+#### 为什么选择 glab？
+
+- ✅ **标准化**：官方 GitLab CLI 工具
+- ✅ **简单**：无需配置 MCP Server
+- ✅ **强大**：完整覆盖 GitLab API
+- ✅ **可靠**：由 GitLab 团队维护
+
 ## 前置配置
 
 ### 1. GitLab 标签配置
@@ -49,16 +113,15 @@ claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 
 #### 配置方式
 
-**方式一：环境变量**
+**方式一：环境变量（推荐）**
 ```bash
 export GITLAB_TOKEN="glpat-xxxxxx"
 ```
 
-**方式二：MCP Server 配置**
-在启动 MCP Server 时通过 `env.GITLAB_TOKEN` 传入。
-
-**方式三：Claude Code Settings**
-在 `~/.claude/settings.json` 的 `mcpServers.gitlab.env` 中配置。
+**方式二：glab 配置**
+```bash
+glab config set token glpat-xxxxxx
+```
 
 ## Skills
 
@@ -70,10 +133,10 @@ export GITLAB_TOKEN="glpat-xxxxxx"
 
 **依赖**：
 - `superpowers:test-driven-development`
-- GitLab Personal Access Token（设置 `GITLAB_TOKEN` 环境变量）
+- **glab CLI** (gitlab issue list, view, note create, update)
 
 **工作流程**：
-1. 通过 GitLab REST API 获取带 `prompt-done` 标签的 Issue
+1. 获取带 `prompt-done` 标签的 Issue
 2. 从评论中读取 AI Task Prompt
 3. 创建开发分支 `{type}/{date}-{short-title}`
 4. TDD 循环执行（RED → GREEN → REFACTOR）
@@ -93,10 +156,10 @@ export GITLAB_TOKEN="glpat-xxxxxx"
 **触发条件**：用户提供 GitLab Issue 链接
 
 **依赖**：
-- GitLab Personal Access Token（设置 `GITLAB_TOKEN` 环境变量）
+- **glab CLI** (gitlab issue view, note list, note create, issue update)
 
 **工作流程**：
-1. 通过 GitLab REST API 获取 Issue 完整信息
+1. 获取 Issue 完整信息
 2. 通过对话补全 Issue 的背景、目标、约束
 3. 生成 AI 任务提示词
 4. 追加评论到 GitLab（可选）
@@ -128,11 +191,12 @@ ln -s /path/to/linear-skill/gitlab-to-task-prompt ~/.claude/skills/gitlab-to-tas
 export GITLAB_TOKEN="glpat-xxxxxx"
 ```
 
-### 2. 验证 GitLab API 连接
+### 2. 验证 glab CLI
 
 ```bash
-curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-  "$GITLAB_API_URL/version"
+glab --version
+glab auth status
+# 应显示已认证
 ```
 
 ### 3. 使用 Skills
@@ -151,6 +215,9 @@ curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
 
 **Q: Labels 为空或找不到 `prompt-done`**
 A: 必须在 GitLab Project Settings → Labels 中手动创建。Skills 不会自动创建标签。
+
+**Q: glab 命令不可用**
+A: 检查 glab 是否正确安装，确认 `GITLAB_TOKEN` 环境变量已配置。
 
 **Q: TDD 测试失败**
 A: 这是预期行为。测试失败时需修复代码直到测试通过，**不允许跳过**。

@@ -15,15 +15,19 @@ description: Use when there are GitLab issues with prompt-done label that need t
 - 需要根据评论中的 AI Prompt 执行任务
 - 任务需要通过 E2E 测试验证
 
-## GitLab API 配置
+## GitLab CLI 配置
 
-使用前需配置环境变量：
+使用前需配置 GitLab Token：
 
 ```bash
+# 方式一：环境变量
 export GITLAB_TOKEN="YOUR_GITLAB_TOKEN"
-export GITLAB_API_URL="https://gitlab.com/api/v4"
-# 或使用私有 GitLab 实例：
-# export GITLAB_API_URL="http://10.10.10.217/api/v4"
+
+# 方式二：glab 配置
+glab config set token YOUR_GITLAB_TOKEN
+
+# 验证安装
+glab auth status
 ```
 
 ## Critical Rule
@@ -41,23 +45,18 @@ export GITLAB_API_URL="https://gitlab.com/api/v4"
 
 ### Step 1: 获取 prompt-done Issues
 
-使用 GitLab API 筛选带 `prompt-done` 标签的 Issue：
+使用 **glab CLI** 筛选带 `prompt-done` 标签的 Issue：
 
 ```bash
-curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-  "$GITLAB_API_URL/issues?labels=prompt-done&state=opened"
+glab issue list --label "prompt-done" --state opened
 ```
 
 ### Step 2: 获取最新评论中的 AI Prompt
 
-使用 GitLab API 获取 Issue 的评论，找到 AI Task Prompt 内容：
+使用 **glab CLI** 获取 Issue 的评论，找到 AI Task Prompt 内容：
 
 ```bash
-# 获取 Issue 所有评论
-curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}/notes"
-
-# 评论按创建时间排序，最新评论在最后
+glab issue note list {issue_id}
 ```
 
 ### Step 3: 创建开发分支
@@ -99,52 +98,53 @@ REFACTOR: 优化代码
 
 **前提条件**：E2E 测试必须 100% 通过。
 
-使用 GitLab API 提交验证证据到 Issue：
+使用 **glab CLI** 提交验证证据到 Issue：
 
 ```bash
-curl --request POST \
-  --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-  --header "Content-Type: application/json" \
-  --data '{
-    "body": "## 验证证据\n\n### 测试结果\n- [x] E2E 测试通过\n- [x] HTTP 200 响应正常\n\n### 证据类型\n**执行时间**: {timestamp}\n**分支**: {gitBranchName}\n**Commit**: {commitHash}"
-  }' \
-  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}/notes"
+glab issue note create {issue_id} --message '## 验证证据
+
+### 测试结果
+- [ ] E2E 测试通过
+- [ ] HTTP 200 响应正常
+
+### 证据类型（任选）
+**网页截图**: {描述截图内容}
+**日志输出**: {关键日志}
+**API 响应**: {响应摘要}
+
+### 执行信息
+- 执行时间: {timestamp}
+- 分支: {gitBranchName}
+- Commit: {commitHash}'
 ```
 
 ### Step 6: 更新标签
 
-使用 GitLab API 将标签从 `prompt-done` 改为 `pending-review`：
+使用 **glab CLI** 将标签从 `prompt-done` 改为 `pending-review`：
 
 ```bash
-curl --request PUT \
-  --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-  --header "Content-Type: application/json" \
-  --data '{
-    "remove_labels": ["prompt-done"],
-    "add_labels": ["pending-review"]
-  }' \
-  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}"
+glab issue update {issue_id} --add-label "pending-review" --remove-label "prompt-done"
 ```
 
 ## Quick Reference
 
-| 操作 | API |
-|------|-----|
-| 筛选 prompt-done | `GET /issues?labels=prompt-done` |
-| 获取评论 | `GET /projects/{id}/issues/{issue_iid}/notes` |
-| 提交证据 | `POST /projects/{id}/issues/{issue_iid}/notes` |
-| 更新标签 | `PUT /projects/{id}/issues/{issue_iid}` |
-| TDD 执行 | superpowers:test-driven-development |
+| 操作 | glab 命令 |
+|------|----------|
+| 筛选 prompt-done | `glab issue list --label "prompt-done" --state opened` |
+| 获取评论 | `glab issue note list {issue_id}` |
+| 提交证据 | `glab issue note create {issue_id} --message "content"` |
+| 更新标签 | `glab issue update {issue_id} --add-label "pending-review" --remove-label "prompt-done"` |
+| TDD 执行 | `superpowers:test-driven-development` |
 
-## GitLab API 工具映射
+## glab CLI 工具映射
 
-| Linear 工具 | GitLab API |
-|-------------|------------|
-| mcp__linear-server__list_issues | `GET /issues?labels=prompt-done` |
-| mcp__linear-server__get_issue | `GET /projects/{id}/issues/{issue_iid}` |
-| mcp__linear-server__list_comments | `GET /projects/{id}/issues/{issue_iid}/notes` |
-| mcp__linear-server__save_comment | `POST /projects/{id}/issues/{issue_iid}/notes` |
-| mcp__linear-server__save_issue | `PUT /projects/{id}/issues/{issue_iid}` |
+| Linear 工具 | glab 命令 |
+|-------------|-----------|
+| mcp__linear-server__list_issues | `glab issue list --label "prompt-done"` |
+| mcp__linear-server__get_issue | `glab issue view {issue_id}` |
+| mcp__linear-server__list_comments | `glab issue note list {issue_id}` |
+| mcp__linear-server__save_comment | `glab issue note create {issue_id} --message "content"` |
+| mcp__linear-server__save_issue | `glab issue update {issue_id}` |
 
 ## 标签状态流转
 

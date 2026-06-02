@@ -19,6 +19,70 @@ Install superpowers plugin:
 claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 ```
 
+### GitLab CLI (glab)
+
+**Primary Tool**: This project uses [glab (GitLab CLI)](https://gitlab.com/gitlab-org/cli) for all GitLab operations.
+
+#### Installation
+
+**Windows (winget)**:
+```bash
+winget install GLab.GLab
+```
+
+**macOS (Homebrew)**:
+```bash
+brew install glab
+```
+
+**Linux**:
+```bash
+# Debian/Ubuntu
+curl -sSL https://packages.gitlab.com/install/repositories/glab/glab-cli/script.deb.sh | sudo bash
+sudo apt-get install glab
+
+# Or via package manager
+sudo apt install glab  # Debian/Ubuntu
+sudo dnf install glab  # Fedora
+```
+
+#### Authentication
+
+After installation, authenticate with GitLab:
+
+```bash
+glab auth login
+```
+
+Or set token via environment variable:
+```bash
+export GITLAB_TOKEN="glpat-xxxxxx"
+```
+
+#### Verify Installation
+
+```bash
+glab --version
+glab auth status
+```
+
+#### Common glab Commands
+
+| Operation | Command |
+|-----------|---------|
+| List issues | `glab issue list --label "prompt-done"` |
+| View issue | `glab issue view {issue_id}` |
+| List comments | `glab issue note list {issue_id}` |
+| Add comment | `glab issue note create {issue_id} --message "content"` |
+| Update labels | `glab issue update {issue_id} --add-label "pending-review" --remove-label "prompt-done"` |
+
+#### Why glab instead of MCP?
+
+- ✅ **Standardized**: Official GitLab CLI tool
+- ✅ **Simple**: No MCP server setup required
+- ✅ **Powerful**: Full GitLab API coverage
+- ✅ **Reliable**: Actively maintained by GitLab
+
 ## Setup
 
 ### 1. GitLab Labels
@@ -49,16 +113,15 @@ claude mcp add superpower -- npx -y @superpowerlabs/superpowers
 
 #### Configuration Methods
 
-**Option 1: Environment Variable**
+**Option 1: Environment Variable (Recommended)**
 ```bash
 export GITLAB_TOKEN="glpat-xxxxxx"
 ```
 
-**Option 2: MCP Server Config**
-Pass via `env.GITLAB_TOKEN` when starting MCP Server.
-
-**Option 3: Claude Code Settings**
-Configure in `~/.claude/settings.json` under `mcpServers.gitlab.env`.
+**Option 2: glab Config**
+```bash
+glab config set token glpat-xxxxxx
+```
 
 ## Skills
 
@@ -70,10 +133,10 @@ Executes GitLab Issues tagged with `prompt-done`.
 
 **Dependencies**:
 - `superpowers:test-driven-development`
-- GitLab Personal Access Token (set `GITLAB_TOKEN` environment variable)
+- **glab CLI** (gitlab issue list, view, note create, update)
 
 **Workflow**:
-1. Fetch Issues with `prompt-done` label via GitLab REST API
+1. Fetch Issues with `prompt-done` label
 2. Read AI Task Prompt from comments
 3. Create dev branch `{type}/{date}-{short-title}`
 4. TDD loop (RED → GREEN → REFACTOR)
@@ -93,10 +156,10 @@ Converts GitLab Issue links to AI-executable task prompts.
 **Trigger**: User provides a GitLab Issue link
 
 **Dependencies**:
-- GitLab Personal Access Token (set `GITLAB_TOKEN` environment variable)
+- **glab CLI** (gitlab issue view, note list, note create, issue update)
 
 **Workflow**:
-1. Fetch complete Issue info via GitLab REST API
+1. Fetch complete Issue info
 2. Dialog to clarify Issue context, goals, and constraints
 3. Generate AI task prompt
 4. Add comment to GitLab (optional)
@@ -128,11 +191,12 @@ ln -s /path/to/linear-skill/gitlab-to-task-prompt ~/.claude/skills/gitlab-to-tas
 export GITLAB_TOKEN="glpat-xxxxxx"
 ```
 
-### 2. Verify GitLab API Connection
+### 2. Verify glab CLI
 
 ```bash
-curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-  "$GITLAB_API_URL/version"
+glab --version
+glab auth status
+# Should show authenticated
 ```
 
 ### 3. Use Skills
@@ -151,6 +215,9 @@ Check if there are any prompt-done Issues to execute
 
 **Q: Labels not found or `prompt-done` missing**
 A: You must manually create labels in GitLab Project Settings → Labels. Skills do not create labels automatically.
+
+**Q: glab command not available**
+A: Check if glab is properly installed and `GITLAB_TOKEN` environment variable is configured.
 
 **Q: TDD tests failing**
 A: This is expected. Fix the code until tests pass. **Skipping is not allowed.**

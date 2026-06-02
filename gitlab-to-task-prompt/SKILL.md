@@ -15,27 +15,29 @@ description: Use when user provides a GitLab issue link and wants to dialog for 
 - 需要通过对话补全 Issue 的背景、目标、约束等信息
 - 最终生成一个 AI 可以直接执行的任务提示词
 
-## GitLab API 配置
+## GitLab CLI 配置
 
-使用前需配置环境变量：
+使用前需配置 GitLab Token：
 
 ```bash
+# 方式一：环境变量
 export GITLAB_TOKEN="YOUR_GITLAB_TOKEN"
-export GITLAB_API_URL="https://gitlab.com/api/v4"
-# 或使用私有 GitLab 实例：
-# export GITLAB_API_URL="http://10.10.10.217/api/v4"
+
+# 方式二：glab 配置
+glab config set token YOUR_GITLAB_TOKEN
+
+# 验证安装
+glab auth status
 ```
 
 ## Workflow
 
 ### Step 1: 提取 Issue 信息
 
-使用 GitLab API 获取 Issue 完整信息：
+使用 **glab CLI** 获取 Issue 完整信息：
 
 ```bash
-# 获取 Issue 详情
-curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}"
+glab issue view {issue_id}
 ```
 
 ### Step 2: 澄清 Issue 内容（关键步骤）
@@ -123,41 +125,36 @@ Issue Title: {title}
 
 当用户确认 Prompt 后，同时完成以下两个操作：
 
-1. **添加评论**：使用 GitLab API 追加评论
-2. **添加标签**：使用 GitLab API 添加标签 `prompt-done`
+1. **添加评论**：使用 **glab CLI** 追加评论
+2. **添加标签**：使用 **glab CLI** 添加标签 `prompt-done`
 
-评论 API：
 ```bash
-curl --request POST \
-  --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-  --header "Content-Type: application/json" \
-  --data '{"body": "## AI Task Prompt\n\n{生成的完整 prompt}\n\n---\n*此 Prompt 由 AI 对话生成*"}' \
-  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}/notes"
-```
+# 添加评论
+glab issue note create {issue_id} --message '## AI Task Prompt
 
-更新标签 API：
-```bash
-curl --request PUT \
-  --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-  --header "Content-Type: application/json" \
-  --data '{"add_labels": ["prompt-done"]}' \
-  "$GITLAB_API_URL/projects/{project_id}/issues/{issue_iid}"
+{生成的完整 prompt}
+
+---
+*此 Prompt 由 AI 对话生成*'
+
+# 添加标签
+glab issue update {issue_id} --add-label "prompt-done"
 ```
 
 ## Quick Reference
 
-| 操作 | API |
-|------|-----|
-| 获取 Issue | `GET /projects/{id}/issues/{issue_iid}` |
-| 获取评论 | `GET /projects/{id}/issues/{issue_iid}/notes` |
-| 追加评论 | `POST /projects/{id}/issues/{issue_iid}/notes` |
-| 更新 Issue | `PUT /projects/{id}/issues/{issue_iid}` |
+| 操作 | glab 命令 |
+|------|----------|
+| 获取 Issue | `glab issue view {issue_id}` |
+| 获取评论 | `glab issue note list {issue_id}` |
+| 追加评论 | `glab issue note create {issue_id} --message "content"` |
+| 更新 Issue | `glab issue update {issue_id} --add-label "label"` |
 
-## GitLab API 工具映射
+## glab CLI 工具映射
 
-| Linear 工具 | GitLab API |
-|-------------|------------|
-| mcp__linear-server__get_issue | `GET /projects/{id}/issues/{issue_iid}` |
-| mcp__linear-server__list_comments | `GET /projects/{id}/issues/{issue_iid}/notes` |
-| mcp__linear-server__save_comment | `POST /projects/{id}/issues/{issue_iid}/notes` |
-| mcp__linear-server__save_issue | `PUT /projects/{id}/issues/{issue_iid}` |
+| Linear 工具 | glab 命令 |
+|-------------|-----------|
+| mcp__linear-server__get_issue | `glab issue view {issue_id}` |
+| mcp__linear-server__list_comments | `glab issue note list {issue_id}` |
+| mcp__linear-server__save_comment | `glab issue note create {issue_id} --message "content"` |
+| mcp__linear-server__save_issue | `glab issue update {issue_id}` |
